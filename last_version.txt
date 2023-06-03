@@ -1,0 +1,346 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
+#include <stdlib.h>
+
+#define MAX_ETUDIANTS 100 // Maximum d'étudiants dans la liste
+#define MAX_NOM 40 // Taille maximale pour le nom et le prénom
+#define MAX_ADRESSE 100 // Taille maximale pour l'adresse
+#define MAX_EMAIL 40 // Taille maximale pour l'email
+#define MAX_FILIERE 40 // Taille maximale pour la filière
+#define MAX_MODULES 10 // Nombre maximum de modules
+#define DATABASE_DIR "database"
+
+// Structure pour représenter un module
+typedef struct Module {
+  char nom_module[50];
+  float coefficient;
+  float note;
+}
+Module;
+
+// Structure pour représenter un étudiant
+typedef struct Etudiant {
+  int ID;
+  char nom[MAX_NOM];
+  char prenom[MAX_NOM];
+  char adresse[MAX_ADRESSE];
+  char email[MAX_EMAIL];
+  char filiere[MAX_FILIERE];
+  int age;
+  float moyenne;
+  Module modules[MAX_MODULES];
+  int numModules;
+}
+Etudiant;
+
+// Fonction pour ajouter un étudiant dans la liste des étudiants enregistrés
+Etudiant ajouterEtudiant() {
+  Etudiant etud;
+
+  printf("Saisir les informations d'un nouvel etudiant :\n");
+  printf("ID : ");
+  scanf("%d", & etud.ID);
+  printf("Nom : ");
+  scanf("%s", etud.nom);
+  printf("Prenom : ");
+  scanf("%s", etud.prenom);
+  printf("Adresse : ");
+  scanf(" %[^\n]", etud.adresse);
+  printf("Email : ");
+  scanf("%s", etud.email);
+  printf("Filiere : ");
+  scanf("%s", etud.filiere);
+  printf("Age : ");
+  scanf("%d", & etud.age);
+
+  printf("Saisie le nombre des modules :\n");
+  scanf("%d", & etud.numModules);
+  for (int i = 0; i < etud.numModules; i++) {
+    printf("Module %d :\n", i + 1);
+    printf("Nom du module : ");
+    scanf("%s", etud.modules[i].nom_module);
+    printf("Coefficient : ");
+    scanf("%f", & etud.modules[i].coefficient);
+    printf("Note : ");
+    scanf("%f", & etud.modules[i].note);
+  }
+
+  printf("              :)  L'etudiant(e) a ete ajoute(e) avec succes  :) \n         ");
+  return etud;
+}
+
+// Fonction pour afficher les détails d'un étudiant
+void afficherEtudiant(Etudiant etud) {
+  printf("ID : %d\n", etud.ID);
+  printf("Nom : %s\n", etud.nom);
+  printf("Prenom : %s\n", etud.prenom);
+  printf("Adresse : %s\n", etud.adresse);
+  printf("Email : %s\n", etud.email);
+  printf("Filiere : %s\n", etud.filiere);
+  printf("Age : %d\n", etud.age);
+
+  for (int i = 0; i < etud.numModules; i++) {
+    printf("Module %d :\n", i + 1);
+    printf("Nom du module : %s\n", etud.modules[i].nom_module);
+    printf("Coefficient : %.2f\n", etud.modules[i].coefficient);
+    printf("Note : %.2f\n", etud.modules[i].note);
+  }
+}
+
+// Fonction pour afficher la liste des étudiants  avec leurs informations personnelles
+void afficherListeEtudiants(Etudiant listeEtudiants[], int nombreEtudiants) {
+  printf("Liste des etudiants :\n");
+
+  for (int i = 0; i < nombreEtudiants; i++) {
+    printf("Etudiant %d :\n", i + 1);
+    afficherEtudiant(listeEtudiants[i]);
+    printf("\n");
+  }
+}
+
+// Fonction pour rechercher un étudiant par son nom ou par son prénom
+void rechercherEtudiantParNom(struct Etudiant listeEtudiants[], int nombreEtudiants, const char* nom) {
+  int etudiantTrouve = 0;
+
+  for (int i = 0; i < nombreEtudiants; i++) {
+    if (strcmp(listeEtudiants[i].nom, nom) == 0 || strcmp(listeEtudiants[i].prenom, nom) == 0) {
+      if (!etudiantTrouve) {
+        printf("Etudiant(e) trouve(e) :\n");
+        etudiantTrouve = 1;
+      }
+      afficherEtudiant(listeEtudiants[i]);
+    }
+  }
+
+  if (!etudiantTrouve) {
+    printf("Aucun etudiant trouve avec le nom ou prenom '%s'\n", nom);
+  }
+}
+
+// Fonction pour supprimer un étudiant de la liste par son nom
+void supprimerEtudiant(Etudiant listeEtudiants[], int * nombreEtudiants, char nom[MAX_NOM]) {
+  int position = -1;
+
+  for (int i = 0; i < * nombreEtudiants; i++) {
+    if (strcmp(listeEtudiants[i].nom,nom) == 0) {
+      position = i;
+      break;
+    }
+  }
+
+  if (position != -1) {
+      for (int i = position; i < * nombreEtudiants - 1; i++) {
+           listeEtudiants[i] = listeEtudiants[i + 1];
+       }
+
+      ( * nombreEtudiants) --;
+       printf("      :) L'etudiant(e) avec le nom %s  a ete supprime(e) avec succes \n  :)  ", nom);
+  } else {
+          printf("      :(  Aucun etudiant trouve avec le nom %s   :(  \n", nom);
+     }
+}
+
+// Fonction pour sauvegarder la liste des étudiants dans un fichier
+void sauvegarderListeEtudiants(Etudiant listeEtudiants[], int nombreEtudiants,
+  const char * nomFichier) {
+  FILE * fichier = fopen(nomFichier, "w");
+  if (fichier == NULL) {
+    printf("Erreur lors de l'ouverture du fichier %s\n", nomFichier);
+    return;
+  }
+
+  fprintf(fichier, "%d\n", nombreEtudiants);
+
+  for (int i = 0; i < nombreEtudiants; i++) {
+    fprintf(fichier, "%d %s %s %s %s %s %d %.2f\n", listeEtudiants[i].ID, listeEtudiants[i].nom,
+      listeEtudiants[i].prenom, listeEtudiants[i].adresse, listeEtudiants[i].email,
+      listeEtudiants[i].filiere, listeEtudiants[i].age, listeEtudiants[i].moyenne);
+    fprintf(fichier, "%d\n", listeEtudiants[i].numModules);
+
+    for (int j = 0; j < listeEtudiants[i].numModules; j++) {
+      fprintf(fichier, "%s %.2f %.2f\n", listeEtudiants[i].modules[j].nom_module,
+        listeEtudiants[i].modules[j].coefficient, listeEtudiants[i].modules[j].note);
+    }
+  }
+
+  fclose(fichier);
+  printf("Liste des etudiants sauvegardee dans le fichier %s\n", nomFichier);
+}
+
+// Fonction pour charger la liste des étudiants à partir d'un fichier
+int chargerListeEtudiants(Etudiant listeEtudiants[], int * nombreEtudiants,
+  const char * nomFichier) {
+  FILE * fichier = fopen(nomFichier, "r");
+  if (fichier == NULL) {
+    printf("Erreur lors de l'ouverture du fichier %s\n", nomFichier);
+    return 0;
+  }
+
+  fscanf(fichier, "%d", nombreEtudiants);
+
+  for (int i = 0; i < * nombreEtudiants; i++) {
+    fscanf(fichier, "%d %s %s %s %s %s %d %f", & listeEtudiants[i].ID, listeEtudiants[i].nom,
+      listeEtudiants[i].prenom, listeEtudiants[i].adresse, listeEtudiants[i].email,
+      listeEtudiants[i].filiere, & listeEtudiants[i].age, & listeEtudiants[i].moyenne);
+    fscanf(fichier, "%d", & listeEtudiants[i].numModules);
+
+    for (int j = 0; j < listeEtudiants[i].numModules; j++) {
+      fscanf(fichier, "%s %f %f", listeEtudiants[i].modules[j].nom_module, &
+        listeEtudiants[i].modules[j].coefficient, & listeEtudiants[i].modules[j].note);
+    }
+  }
+
+  fclose(fichier);
+  printf("Liste des etudiants chargee a partir du fichier %s\n", nomFichier);
+  return 1;
+}
+
+// Fonction pour modifier les informations d'un étudiant enregistré
+void modifierEtudiant(Etudiant listeEtudiants[], int nombreEtudiants, char nom[MAX_NOM]) {
+  int position = -1;
+
+  for (int i = 0; i < nombreEtudiants; i++) {
+        if (strcmp(listeEtudiants[i].nom,nom) == 0 ) {
+
+          position = i;
+          break;
+       }
+   }
+
+  if (position != -1) {
+    printf("Modification des informations d'etudiant avec le nom %s :\n", nom);
+    printf("Nouveau nom : ");
+    scanf("%s", listeEtudiants[position].nom);
+    printf("Nouveau prenom : ");
+    scanf("%s", listeEtudiants[position].prenom);
+    printf("Nouveau ID: ");
+    scanf("%d", listeEtudiants[position].ID);
+    printf("Nouvel email : ");
+    scanf("%s", listeEtudiants[position].email);
+    printf("Nouvelle filiere : ");
+    scanf("%s", listeEtudiants[position].filiere);
+    printf("Nouvel age : ");
+    scanf("%d", & listeEtudiants[position].age);
+    printf("Nouvelle moyenne : ");
+    scanf("%f", & listeEtudiants[position].moyenne);
+    printf("Modification des modules :\n");
+    printf("Nombre de modules : ");
+    scanf("%d", & listeEtudiants[position].numModules);
+
+    for (int i = 0; i < listeEtudiants[position].numModules; i++) {
+      printf("Module %d :\n", i + 1);
+      printf("Nouveau nom du module : ");
+      scanf("%s", listeEtudiants[position].modules[i].nom_module);
+      printf("Nouveau coefficient : ");
+      scanf("%f", & listeEtudiants[position].modules[i].coefficient);
+      printf("Nouvelle note : ");
+      scanf("%f", & listeEtudiants[position].modules[i].note);
+    }
+
+    printf("  :) Informations de l'etudiant avec le nom %s modifiees avec succes :) \n", nom);
+  } else {
+    printf("  :(  Aucun etudiant trouve avec le nom %s  :( \n",nom);
+  }
+}
+
+
+  //Fonction pour calculer la moyenne d'un etudiant enregistré
+ float calculer_Moyenne(Etudiant listeEtudiants[], int nombreEtudiants, char nom[MAX_NOM]) {
+  float moyenneModules = 0.0;
+  float sommeCoefficients = 0.0;
+
+  for (int i = 0; i < nombreEtudiants; i++) {
+    if (strcmp(listeEtudiants[i].nom,nom) == 0 ) {
+      for (int j = 0; j < listeEtudiants[i].numModules; j++) {
+        moyenneModules += listeEtudiants[i].modules[j].note * listeEtudiants[i].modules[j].coefficient;
+        sommeCoefficients += listeEtudiants[i].modules[j].coefficient;
+      }
+    }
+  }
+
+  if (sommeCoefficients > 0.0) {
+    moyenneModules /= sommeCoefficients;
+  } else {
+    printf("Aucun etudiant trouve avec le nom: %s \n", nom);
+  }
+
+  return moyenneModules;
+}
+
+int main()
+{
+  Etudiant listeEtudiants[MAX_ETUDIANTS];
+  int nombreEtudiants = 0;
+  char nomFichier[] = "etudiants.txt";
+  int choix;
+  char nom,prenom;
+  char nomRecherche[MAX_NOM];
+  float note;
+
+  do {
+    printf("***Gestion des etudiants*** \n");
+    printf("1. Ajouter un etudiant\n");
+    printf("2. Afficher la liste des etudiants \n");
+    printf("3. Rechercher un etudiant par son nom ou par son prenom\n");
+    printf("4. Supprimer un etudiant de la liste par son nom\n");
+    printf("5. Modifier les informations d'un etudiant \n");
+    printf("6. Sauvegarder la liste des etudiants dans un fichier \n");
+    printf("7. Calculer la moyenne d'un etudiant \n");
+    printf("0. Quitter\n");
+    printf("Choix : ");
+    scanf("%d", & choix);
+
+    switch (choix) {
+    case 1:
+      listeEtudiants[nombreEtudiants] = ajouterEtudiant();
+      nombreEtudiants++;
+      break;
+
+    case 2:
+      afficherListeEtudiants(listeEtudiants, nombreEtudiants);
+      break;
+
+    case 3:
+      printf("Nom ou prenom a rechercher : ");
+      scanf("%s", nomRecherche);
+      rechercherEtudiantParNom(listeEtudiants, nombreEtudiants, nomRecherche);
+      break;
+
+    case 4:
+      printf("Le nom de l'etudiant a supprimer : ");
+      scanf("%s", & nom);
+      supprimerEtudiant(listeEtudiants,&nombreEtudiants, &nom);
+      break;
+    case 5:
+      printf("Le nom de l'etudiant a modifier : ");
+      scanf("%s", & nom);
+      modifierEtudiant(listeEtudiants,nombreEtudiants, &nom);
+      break;
+
+    case 6:
+      sauvegarderListeEtudiants(listeEtudiants, nombreEtudiants, nomFichier);
+      break;
+
+    case 7:
+      printf("Le nom de l'etudiant dont vous sohaitez calculer la moyenne : ");
+      scanf("%s", & nom);
+      note=calculer_Moyenne(listeEtudiants, nombreEtudiants, &nom);
+      printf("la moyenne est : %f ",note);
+      break;
+
+    case 0:
+      printf("Au revoir !\n");
+      break;
+
+      default:
+      printf("Choix invalide. Veuillez reessayer.\n");
+      break;
+    }
+
+    printf("\n");
+  } while (choix != 0);
+
+   return 0;
+}
